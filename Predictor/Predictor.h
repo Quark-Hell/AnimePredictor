@@ -1,0 +1,10 @@
+#ifndef ANIMEPREDICTOR_PREDICTOR_H
+#define ANIMEPREDICTOR_PREDICTOR_H
+
+
+class Predictor {
+
+};
+
+
+#endif //ANIMEPREDICTOR_PREDICTOR_H

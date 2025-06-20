@@ -33,3 +33,12 @@
 
 #.idea
 .idea/
+
+cmake-build-release/
+cmake-buid-release-docker/
+
+cmake-build-debug/
+cmake-buid-debug-docker/
+
+Parser/data/
+Training/out/
