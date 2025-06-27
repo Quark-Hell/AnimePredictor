@@ -1,72 +1,36 @@
 #include "Predictor.h"
-#include "Window/Window.h"
+#include "Window/WindowManager.h"
+#include "Model/Loader.h"
 
-#include "imgui.h"
-#include "backends/imgui_impl_glfw.h"
-#include "backends/imgui_impl_opengl3.h"
+#include "ImGUI/ImGUI_Manager.h"
 
-#include <GLFW/glfw3.h>
-
-#include <cstdio>
-#include <memory>
-
-const char* glsl_version = "#version 130";
-
-static void glfw_error_callback(int error, const char* description) {
-    fprintf(stderr, "GLFW Error %d: %s\n", error, description);
-}
-
-void SetupImGUI(GLFWwindow& window) {
-    // Setup Dear ImGui context
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-
-    // Setup ImGui style
-    ImGui::StyleColorsDark();
-
-    // Setup Platform/Renderer bindings
-    ImGui_ImplGlfw_InitForOpenGL(&window, true);
-    ImGui_ImplOpenGL3_Init(glsl_version);
-}
-
+#include "ImGUI/Entities/ImGUI_Main.h"
+#include "ImGUI/Entities/ImGUI_Analysis.h"
+#include "ImGUI/Entities/ImGUI_Training.h"
+#include "ImGUI/Entities/ImGUI_EndMain.h"
+#include "ImGUI/Entities/ImGUI_Logger.h"
 
 int main() {
-    std::unique_ptr<Window> main_window = std::make_unique<Window>(1280, 720);
-    main_window->CreateWindow();
+    //Loader loader;
+    //loader.Test();
 
-    SetupImGUI(*main_window->window_ptr);
+    auto& mgr = ImGUI_Manager::GetInstance();
 
-    // Main loop
-    while (!glfwWindowShouldClose(main_window->window_ptr)) {
-        glfwPollEvents();
+    mgr.AddEntity<ImGUI_Main>("", "Main");
+    mgr.AddEntity<ImGUI_Training>("Main", "Training");
+    mgr.AddEntity<ImGUI_Analysis>("Main", "Analysis");
+    mgr.AddEntity<ImGUI_Logger>("Main", "Logger");
+    mgr.AddEntity<ImGUI_EndMain>("Main", "EndMain");
 
-        // Start ImGui frame
-        ImGui_ImplOpenGL3_NewFrame();
-        ImGui_ImplGlfw_NewFrame();
-        ImGui::NewFrame();
+    WindowManager::Start();
+    WindowManager::ChangeFonts("assets/fonts/Roboto-VariableFont.ttf");
+    WindowManager::SetClearColor(RGBAColor{ 0.5f, 0.5f, 0.5f, 1.0f} );
 
-        // Create ImGui window
-        ImGui::Begin("Hello, world!");
-        ImGui::Text("This is a minimal Dear ImGui example.");
-        ImGui::End();
-
-        // Rendering
-        ImGui::Render();
-        int display_w, display_h;
-        glfwGetFramebufferSize(main_window->window_ptr, &display_w, &display_h);
-        glViewport(0, 0, display_w, display_h);
-        glClearColor(0.05f, 0.05f, 0.05f, 1.0f);
-        glClear(GL_COLOR_BUFFER_BIT);
-
-        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-        glfwSwapBuffers(main_window->window_ptr);
+    while (!WindowManager::ShouldClose()) {
+        WindowManager::Render();
     }
 
-    ImGui_ImplOpenGL3_Shutdown();
-    ImGui_ImplGlfw_Shutdown();
-    ImGui::DestroyContext();
+    WindowManager::Shutdown();
 
-    //std::cout << "TensorFlow version: " << TF_Version() << std::endl;
     return 0;
 }

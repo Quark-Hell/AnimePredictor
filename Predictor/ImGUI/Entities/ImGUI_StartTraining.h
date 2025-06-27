@@ -1,0 +1,11 @@
+#ifndef ANIMEPREDICTOR_IMGUI_STARTTRAINING_H
+#define ANIMEPREDICTOR_IMGUI_STARTTRAINING_H
+
+#include "ImGUI/ImGUI_Entity.h"
+
+class ImGUI_StartTraining : public ImGUI_Entity {
+
+};
+
+
+#endif //ANIMEPREDICTOR_IMGUI_STARTTRAINING_H
