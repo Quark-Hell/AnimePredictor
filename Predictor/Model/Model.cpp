@@ -78,7 +78,7 @@ void Model::PredictOnDatabase() {
     std::mt19937 g(rd());
     std::shuffle(all_anime.begin(), all_anime.end(), g);
 
-    LogManager::LogInfo("🎲 Random 10 Anime Predictions:");
+    LogManager::LogInfo("Random 10 Anime Predictions:");
     LogManager::LogInfo("---------------------------------------------");
 
     for (int i = 0; i < 10 && i < all_anime.size(); ++i) {

@@ -1,4 +1,5 @@
 #include "Loader.h"
+#include "Logger/LogManager.h"
 
 #include <iostream>
 
@@ -7,17 +8,17 @@ void Loader::Test() {
 
     try {
         // Загрузка метаданных и модели
-        predictor.LoadMetadata("model_export/metadata.json");
-        predictor.LoadModel("model_export/model.tflite");
+        predictor.LoadMetadata("Training/model_export/metadata.json");
+        predictor.LoadModel("Training/model_export/model.tflite");
 
         // Загрузка аниме-базы
-        predictor.LoadDataBase("out/anime.csv");
+        predictor.LoadDataBase("Training/out/anime.csv");
 
         // Перемешиваем и берём 10 случайных
         predictor.PredictOnDatabase();
-        predictor.PredictOnUI();
+        //predictor.PredictOnUI();
 
     } catch (const std::exception& ex) {
-        std::cerr << "Ошибка: " << ex.what() << "\n";
+        LogManager::LogCritical(std::string("Ошибка: ") + ex.what() + " " + __LOGERROR__);
     }
 }

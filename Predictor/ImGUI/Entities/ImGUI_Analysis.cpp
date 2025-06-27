@@ -1,5 +1,7 @@
 #include "ImGUI_Analysis.h"
 
+#include "Model/Loader.h"
+
 bool ImGUI_Analysis::Render() {
     if (ImGui::BeginTabItem("Анализ")) {
         ImGui::Text("Интерфейс для обучения модели");
@@ -22,7 +24,8 @@ bool ImGUI_Analysis::Render() {
         InputTextStdString("Жанры (через |)", animeGenres);
 
         if (ImGui::Button("Предсказать из базы данных")) {
-            // TODO: Добавь логику поиска по базе и предсказания
+            Loader loader;
+            loader.Test();
         }
 
         ImGui::SameLine();

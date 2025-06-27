@@ -43,6 +43,7 @@ public:
     }
 
     void RenderAll(int width, int height);
+    Node* FindNode(const std::string& name);
 
 private:
     ImGUI_Manager() = default;
@@ -51,7 +52,6 @@ private:
     std::mutex _mutex;
 
     void RenderNode(Node& node);
-
     Node* FindNode(std::vector<std::unique_ptr<Node>>& nodes, const std::string& name);
 };
 

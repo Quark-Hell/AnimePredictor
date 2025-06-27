@@ -150,7 +150,7 @@ def train_feature_model(features_df, target):
     history = model.fit(
         X_train, y_train,
         validation_data=(X_val, y_val),
-        epochs=1,
+        epochs=10,
         batch_size=64,
         callbacks=callbacks,
         verbose=1

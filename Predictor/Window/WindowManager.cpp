@@ -3,6 +3,7 @@
 #include "misc/Texture.h"
 
 #include "ImGUI/ImGUI_Manager.h"
+#include "Logger/LogManager.h"
 
 #include <iostream>
 #include <cmath>
@@ -20,8 +21,9 @@ void WindowManager::Start(float width, float height, std::string name) {
     // Setup GLFW
     glfwSetErrorCallback(glfw_error_callback);
     if(!glfwInit()){
-        std::cerr << "Not init";
+        LogManager::LogCritical("Failed to initialize GLFW " + __LOGERROR__);
     }
+    LogManager::LogInfo("GLFW Inited");
 
     // Setup OpenGL (GL 3.0+ Core Profile)
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
@@ -33,8 +35,9 @@ void WindowManager::Start(float width, float height, std::string name) {
 
     WindowManager::GetWindow(width, height, std::move(name));
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
-        std::cerr << "Failed to initialize GLAD\n";
+        LogManager::LogCritical("Failed to initialize GLAD " + __LOGERROR__);
     }
+    LogManager::LogInfo("GLAD Inited");
 
     SetupImGui();
 }
@@ -52,6 +55,8 @@ void WindowManager::SetupImGui() {
     // Setup Platform/Renderer bindings
     ImGui_ImplGlfw_InitForOpenGL(win.window_ptr, true);
     ImGui_ImplOpenGL3_Init(glsl_version.c_str());
+
+    LogManager::LogInfo("ImGUI Inited");
 }
 
 void WindowManager::ChangeFonts(const std::string& path) {
@@ -63,6 +68,8 @@ void WindowManager::ChangeFonts(const std::string& path) {
     //// Пересоздаём текстуру
     ImGui_ImplOpenGL3_DestroyFontsTexture();
     ImGui_ImplOpenGL3_CreateFontsTexture();
+
+    LogManager::LogInfo("Fonts changed to " + path);
 }
 
 void WindowManager::Render() {

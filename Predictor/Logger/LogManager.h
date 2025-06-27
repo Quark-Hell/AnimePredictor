@@ -49,13 +49,14 @@ public:
         std::ostringstream messageStream;
         messageStream << "[" << logger.GetCurrentTime() << "] INFO:";
         ((messageStream << " " << data), ...);
-        const std::string message = "\033[36m" + messageStream.str() + "\033[0m";
+        const std::string rawMessage = messageStream.str();
+        const std::string message = "\033[36m" + rawMessage + "\033[0m";
 
         const std::lock_guard guard(logger._mutex);
         logger._logFile.open(logger.GetLogFileName(), std::ios::app);
 
         logger.WriteToFile(messageStream.str());
-        logger.WriteToBuffer(message);
+        logger.WriteToBuffer(rawMessage);
         std::cout << message << std::endl;
         logger._logFile.close();
     }
@@ -67,13 +68,14 @@ public:
         std::ostringstream messageStream;
         messageStream << "[" << logger.GetCurrentTime() << "] WARNING:";
         ((messageStream << " " << data), ...);
-        const std::string message = "\033[33m" + messageStream.str() + "\033[0m";
+        const std::string rawMessage = messageStream.str();
+        const std::string message = "\033[33m" + rawMessage + "\033[0m";
 
         const std::lock_guard guard(logger._mutex);
         logger._logFile.open(logger.GetLogFileName(), std::ios::app);
 
         logger.WriteToFile(messageStream.str());
-        logger.WriteToBuffer(message);
+        logger.WriteToBuffer(rawMessage);
         std::cout << message << std::endl;
         logger._logFile.close();
     }
@@ -85,13 +87,14 @@ public:
         std::ostringstream messageStream;
         messageStream << "[" << logger.GetCurrentTime() << "] ERROR:";
         ((messageStream << " " << data), ...);
-        const std::string message = "\033[31m" + messageStream.str() + "\033[0m";
+        const std::string rawMessage = messageStream.str();
+        const std::string message = "\033[31m" + rawMessage + "\033[0m";
 
         const std::lock_guard guard(logger._mutex);
         logger._logFile.open(logger.GetLogFileName(), std::ios::app);
 
         logger.WriteToFile(messageStream.str());
-        logger.WriteToBuffer(message);
+        logger.WriteToBuffer(rawMessage);
         std::cout << message << std::endl;
         logger._logFile.close();
     }
@@ -103,13 +106,14 @@ public:
         std::ostringstream messageStream;
         messageStream << "[" << logger.GetCurrentTime() << "] CRITICAL:";
         ((messageStream << " " << data), ...);
-        const std::string message = "\033[1;31m" + messageStream.str() + "\033[0m";
+        const std::string rawMessage = messageStream.str();
+        const std::string message = "\033[1;31m" + rawMessage + "\033[0m";
 
         const std::lock_guard guard(logger._mutex);
         logger._logFile.open(logger.GetLogFileName(), std::ios::app);
 
         logger.WriteToFile(messageStream.str());
-        logger.WriteToBuffer(message);
+        logger.WriteToBuffer(rawMessage);
         std::cout << message << std::endl;
         logger._logFile.close();
 

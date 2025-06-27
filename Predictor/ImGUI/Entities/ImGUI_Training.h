@@ -4,13 +4,14 @@
 #include "ImGUI/ImGUI_Entity.h"
 
 class ImGUI_Training : public ImGUI_Entity {
+private:
+    std::string animePath = "assets/data/anime.csv";
+    std::string ratingPath = "assets/data/rating.csv";
+
 public:
     explicit ImGUI_Training(const std::string& name) : ImGUI_Entity(name) {}
 
     bool Render() final;
-
-private:
-    void TrainModel(const std::string& animePath, const std::string& ratingPath);
 };
 
 

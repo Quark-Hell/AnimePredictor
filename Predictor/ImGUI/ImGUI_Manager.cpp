@@ -43,3 +43,7 @@ Node* ImGUI_Manager::FindNode(std::vector<std::unique_ptr<Node>>& nodes, const s
     }
     return nullptr;
 }
+
+Node* ImGUI_Manager::FindNode(const std::string& name) {
+    return FindNode(_roots, name);
+}
