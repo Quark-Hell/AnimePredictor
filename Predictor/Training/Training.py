@@ -202,7 +202,7 @@ def train_feature_model(features_df, target):
         metrics=['mae']
     )
 
-    print("\nАрхитектура модели (без эмбеддингов):")
+    print("\nАрхитектура модели:")
     model.summary()
 
     # Callbacks
@@ -240,7 +240,7 @@ def evaluate_model(model, X_test, y_test):
     r2 = r2_score(y_test, y_pred)
 
     print("\n" + "=" * 50)
-    print("ОЦЕНКА КАЧЕСТВА МОДЕЛИ (без эмбеддингов)")
+    print("ОЦЕНКА КАЧЕСТВА МОДЕЛИ")
     print("=" * 50)
     print(f"MAE (Mean Absolute Error): {mae:.4f}")
     print(f"RMSE (Root Mean Square Error): {rmse:.4f}")
@@ -312,32 +312,6 @@ def save_model_and_metadata(model, scaler, mlb, le_type, feature_columns):
     print("Все файлы сохранены в папке 'model_export/'")
 
 
-def plot_training_history(history):
-    """Отображает историю обучения"""
-    try:
-        import matplotlib.pyplot as plt
-
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
-        ax1.plot(history.history['loss'], label='Training Loss')
-        ax1.plot(history.history['val_loss'], label='Validation Loss')
-        ax1.set_title('Model Loss')
-        ax1.set_xlabel('Epoch')
-        ax1.set_ylabel('Loss')
-        ax1.legend()
-
-        ax2.plot(history.history['mae'], label='Training MAE')
-        ax2.plot(history.history['val_mae'], label='Validation MAE')
-        ax2.set_title('Model MAE')
-        ax2.set_xlabel('Epoch')
-        ax2.set_ylabel('MAE')
-        ax2.legend()
-
-        plt.tight_layout()
-        plt.show()
-    except ImportError:
-        print("Matplotlib не установлен, пропускаем построение графиков")
-
-
 def main():
     print("Загрузка и предобработка данных...")
     merged_df = load_and_preprocess_data()
@@ -369,9 +343,6 @@ def main():
     save_model_and_metadata(model, scaler, mlb, le_type, feature_columns)
 
     print("\nМодель успешно обучена и сохранена!")
-
-    # Опционально: показать графики истории обучения
-    plot_training_history(history)
 
     return model
 
