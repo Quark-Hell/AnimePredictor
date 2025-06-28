@@ -17,7 +17,12 @@ class LogManager {
 
 private:
     std::ofstream _logFile;
-    std::list<std::string> _logBuffer;
+
+    std::list<std::string> _customLogBuffer;
+    std::list<std::string> _infoLogBuffer;
+    std::list<std::string> _warningLogBuffer;
+    std::list<std::string> _errorLogBuffer;
+    std::list<std::string> _criticalLogBuffer;
 
     std::mutex _mutex;
 
@@ -29,7 +34,6 @@ private:
     std::string GetCurrentDate() const;
 
     void WriteToFile(const std::string &message);
-    void WriteToBuffer(const std::string &message);
 
 public:
     ~LogManager();
@@ -40,7 +44,35 @@ public:
 
     static LogManager& GetInstance();
 
-    const std::list<std::string> &GetLogBuffer();
+    const std::list<std::string> &GetCustomLogBuffer();
+    const std::list<std::string> &GetInfoLogBuffer();
+    const std::list<std::string> &GetWarningLogBuffer();
+    const std::list<std::string> &GetErrorLogBuffer();
+    const std::list<std::string> &GetCriticalLogBuffer();
+
+    template<typename... Data>
+    static void LogCustom(bool isAddTime, const std::string& type, const Data &... data) {
+        LogManager& logger = LogManager::GetInstance();
+
+        std::ostringstream messageStream;
+        if (isAddTime) {
+            messageStream << "[" << logger.GetCurrentTime() << "] " + type;
+        } else{
+            messageStream << type;
+        }
+
+        ((messageStream << " " << data), ...);
+        const std::string rawMessage = messageStream.str();
+        const std::string message = "\033[36m" + rawMessage + "\033[0m";
+
+        const std::lock_guard guard(logger._mutex);
+        logger._logFile.open(logger.GetLogFileName(), std::ios::app);
+
+        logger.WriteToFile(messageStream.str());
+        logger._customLogBuffer.emplace_back(rawMessage);
+        std::cout << message << std::endl;
+        logger._logFile.close();
+    }
 
     template<typename... Data>
     static void LogInfo(const Data &... data) {
@@ -56,7 +88,7 @@ public:
         logger._logFile.open(logger.GetLogFileName(), std::ios::app);
 
         logger.WriteToFile(messageStream.str());
-        logger.WriteToBuffer(rawMessage);
+        logger._infoLogBuffer.emplace_back(rawMessage);
         std::cout << message << std::endl;
         logger._logFile.close();
     }
@@ -75,7 +107,7 @@ public:
         logger._logFile.open(logger.GetLogFileName(), std::ios::app);
 
         logger.WriteToFile(messageStream.str());
-        logger.WriteToBuffer(rawMessage);
+        logger._warningLogBuffer.emplace_back(rawMessage);
         std::cout << message << std::endl;
         logger._logFile.close();
     }
@@ -94,7 +126,7 @@ public:
         logger._logFile.open(logger.GetLogFileName(), std::ios::app);
 
         logger.WriteToFile(messageStream.str());
-        logger.WriteToBuffer(rawMessage);
+        logger._errorLogBuffer.emplace_back(rawMessage);
         std::cout << message << std::endl;
         logger._logFile.close();
     }
@@ -113,7 +145,7 @@ public:
         logger._logFile.open(logger.GetLogFileName(), std::ios::app);
 
         logger.WriteToFile(messageStream.str());
-        logger.WriteToBuffer(rawMessage);
+        logger._criticalLogBuffer.emplace_back(rawMessage);
         std::cout << message << std::endl;
         logger._logFile.close();
 

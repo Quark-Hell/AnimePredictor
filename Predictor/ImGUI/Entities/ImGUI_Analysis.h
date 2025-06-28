@@ -8,6 +8,9 @@ public:
     explicit ImGUI_Analysis(const std::string& name) : ImGUI_Entity(name) {}
 
     bool Render() final;
+
+private:
+    void LogMenu();
 };
 
 

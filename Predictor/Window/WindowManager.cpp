@@ -5,16 +5,32 @@
 #include "ImGUI/ImGUI_Manager.h"
 #include "Logger/LogManager.h"
 
-#include <iostream>
 #include <cmath>
 
 static void glfw_error_callback(int error, const char* description) {
     fprintf(stderr, "GLFW Error %d: %s\n", error, description);
 }
 
-Window& WindowManager::GetWindow(float width, float height, std::string name) {
+Window& WindowManager::GetInstance(float width, float height, std::string name) {
     static Window* win (new Window(width, height, std::move(name)));
     return *win;
+}
+
+void WindowManager::SetWindowIcon(const std::string& path) {
+    Texture icon(path, false, false);
+
+    auto& win = WindowManager::GetInstance();
+
+    if (icon.GetPixels()) {
+        GLFWimage images[1];
+        images[0].width = icon.GetWidth();
+        images[0].height = icon.GetHeight();
+        images[0].pixels = icon.GetPixels();
+
+        glfwSetWindowIcon(win.window_ptr, 1, images);
+    } else {
+        LogManager::LogError("Failed to load icon " + __LOGERROR__);
+    }
 }
 
 void WindowManager::Start(float width, float height, std::string name) {
@@ -33,7 +49,7 @@ void WindowManager::Start(float width, float height, std::string name) {
     glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE); // For MacOS
 #endif
 
-    WindowManager::GetWindow(width, height, std::move(name));
+    WindowManager::GetInstance(width, height, std::move(name));
     if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress)) {
         LogManager::LogCritical("Failed to initialize GLAD " + __LOGERROR__);
     }
@@ -43,7 +59,7 @@ void WindowManager::Start(float width, float height, std::string name) {
 }
 
 void WindowManager::SetupImGui() {
-    auto& win = WindowManager::GetWindow();
+    auto& win = WindowManager::GetInstance();
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -73,7 +89,7 @@ void WindowManager::ChangeFonts(const std::string& path) {
 }
 
 void WindowManager::Render() {
-    auto& win = WindowManager::GetWindow();
+    auto& win = WindowManager::GetInstance();
 
     glfwPollEvents();
 
@@ -109,12 +125,12 @@ void WindowManager::Render() {
 }
 
 bool WindowManager::ShouldClose() {
-    auto& win = WindowManager::GetWindow();
+    auto& win = WindowManager::GetInstance();
     return glfwWindowShouldClose(win.window_ptr);
 }
 
 void WindowManager::Shutdown() {
-    auto& win = WindowManager::GetWindow();
+    auto& win = WindowManager::GetInstance();
 
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplGlfw_Shutdown();
@@ -125,11 +141,11 @@ void WindowManager::Shutdown() {
 }
 
 RGBAColor WindowManager::GetClearColor() {
-    auto& win = WindowManager::GetWindow();
+    auto& win = WindowManager::GetInstance();
     return win._clearColor;
 }
 
 void WindowManager::SetClearColor(RGBAColor newColor) {
-    auto& win = WindowManager::GetWindow();
+    auto& win = WindowManager::GetInstance();
     win._clearColor = newColor;
 }

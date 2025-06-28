@@ -8,7 +8,7 @@
 
 class Texture {
 public:
-    explicit Texture(const std::string& filepath);
+    explicit Texture(const std::string& filepath, bool isBind = true, bool isFree = true);
     ~Texture();
 
     void Bind(unsigned int slot = 0) const;
@@ -19,11 +19,15 @@ public:
 
     [[nodiscard]] int GetTextureID() const;
 
+    unsigned char* GetPixels();
+
 private:
     GLuint _textureID = 0;
     int _width = 0;
     int _height = 0;
     int _channels = 0;
+
+    unsigned char* _data = nullptr;
 };
 
 

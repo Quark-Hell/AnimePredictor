@@ -9,7 +9,7 @@ private:
     static inline std::string glsl_version = "#version 130";
 
 private:
-    static Window& GetWindow(float width = 1280, float height = 720, std::string name = "Unnamed");
+    static Window& GetInstance(float width = 1280, float height = 720, std::string name = "Unnamed");
     static int GetFlags();
     static void SetFlags();
 
@@ -22,7 +22,7 @@ public:
     WindowManager& operator=(const WindowManager&) = delete;
     WindowManager& operator=(WindowManager&&) = delete;
 
-    static void Start(float width = 1280, float height = 720, std::string name = "Unnamed");
+    static void Start(float width = 1280, float height = 720, std::string name = "Predictor");
     static void Render();
     static bool ShouldClose();
     static void Shutdown();
@@ -31,6 +31,8 @@ public:
 
     [[nodiscard]] static RGBAColor GetClearColor();
     static void SetClearColor(RGBAColor newColor);
+
+    static void SetWindowIcon(const std::string& path);
 };
 
 

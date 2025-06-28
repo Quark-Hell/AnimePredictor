@@ -78,18 +78,18 @@ void Model::PredictOnDatabase() {
     std::mt19937 g(rd());
     std::shuffle(all_anime.begin(), all_anime.end(), g);
 
-    LogManager::LogInfo("Random 10 Anime Predictions:");
-    LogManager::LogInfo("---------------------------------------------");
+    LogManager::LogCustom(false,"","Random 10 Anime Predictions:");
+    LogManager::LogCustom(false,"","---------------------------------------------");
 
     for (int i = 0; i < 10 && i < all_anime.size(); ++i) {
         const auto& anime = all_anime[i];
         auto input = BuildInputVector(anime, _metadata, _featureColumns);
         float prediction = predict_rating(_interpreter.get(), input);
 
-        LogManager::LogInfo("[" + std::to_string(i + 1) + "] " + anime.name);
-        LogManager::LogInfo("   True Rating      : " + std::to_string(anime.rating));
-        LogManager::LogInfo("   Predicted Rating : " + std::to_string(prediction));
-        LogManager::LogInfo("---------------------------------------------");
+        LogManager::LogCustom(false,"","[" + std::to_string(i + 1) + "] " + anime.name);
+        LogManager::LogCustom(false,"","   True Rating      : " + std::to_string(anime.rating));
+        LogManager::LogCustom(false,"","   Predicted Rating : " + std::to_string(prediction));
+        LogManager::LogCustom(false,"","---------------------------------------------");
     }
 }
 

@@ -4,24 +4,11 @@
 
 bool ImGUI_Logger::Render() {
     if (ImGui::BeginTabItem("Логирование")) {
-        LogManager& log = LogManager::GetInstance();
-
         // Буфер, необходимый для отображения
-        static size_t messageCount = 0;
         static std::string buffer;
         static size_t previousLogSize = 0;
 
-        size_t counter = 0;
-        for(const auto& it : log.GetLogBuffer()) {
-            if (messageCount == log.GetLogBuffer().size()) { break; }
-            if (counter < messageCount) { counter++; continue; }
-
-            //Remove format
-
-            buffer += it + "\n";
-            counter++;
-            messageCount = counter;
-        }
+        ParseMessages(buffer);
 
         // Начинаем Child-зону для скроллинга
         ImGui::BeginChild("LogScrollRegion", ImVec2(-1, -1), true, ImGuiWindowFlags_HorizontalScrollbar);
@@ -39,4 +26,52 @@ bool ImGUI_Logger::Render() {
         return true;
     }
     return false;
+}
+
+void ImGUI_Logger::ParseMessages(std::string& buffer) {
+    LogManager& log = LogManager::GetInstance();
+
+    static size_t infoMessageCount = 0;
+    size_t counter = 0;
+    for(const auto& it : log.GetInfoLogBuffer()) {
+        if (infoMessageCount == log.GetInfoLogBuffer().size()) { break; }
+        if (counter < infoMessageCount) { counter++; continue; }
+
+        buffer += it + "\n";
+        counter++;
+        infoMessageCount = counter;
+    }
+
+    static size_t warningMessageCount = 0;
+    counter = 0;
+    for(const auto& it : log.GetInfoLogBuffer()) {
+        if (warningMessageCount == log.GetInfoLogBuffer().size()) { break; }
+        if (counter < warningMessageCount) { counter++; continue; }
+
+        buffer += it + "\n";
+        counter++;
+        warningMessageCount = counter;
+    }
+
+    static size_t errorMessageCount = 0;
+    counter = 0;
+    for(const auto& it : log.GetInfoLogBuffer()) {
+        if (errorMessageCount == log.GetInfoLogBuffer().size()) { break; }
+        if (counter < errorMessageCount) { counter++; continue; }
+
+        buffer += it + "\n";
+        counter++;
+        errorMessageCount = counter;
+    }
+
+    static size_t criticalMessageCount = 0;
+    counter = 0;
+    for(const auto& it : log.GetInfoLogBuffer()) {
+        if (criticalMessageCount == log.GetInfoLogBuffer().size()) { break; }
+        if (counter < criticalMessageCount) { counter++; continue; }
+
+        buffer += it + "\n";
+        counter++;
+        criticalMessageCount = counter;
+    }
 }

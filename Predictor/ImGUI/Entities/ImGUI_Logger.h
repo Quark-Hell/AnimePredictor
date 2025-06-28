@@ -9,6 +9,7 @@ public:
     explicit ImGUI_Logger(const std::string& name) : ImGUI_Entity(name) {}
 
     bool Render() final;
+    void ParseMessages(std::string& buffer);
 };
 
 

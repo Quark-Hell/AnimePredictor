@@ -11,10 +11,6 @@ LogManager::~LogManager() {
     }
 }
 
-void LogManager::WriteToBuffer(const std::string& message) {
-    _logBuffer.emplace_back(message);
-}
-
 std::string LogManager::GetCurrentDate() const {
     const auto now = std::chrono::system_clock::now();
     const auto time = std::chrono::system_clock::to_time_t(now);
@@ -56,6 +52,18 @@ LogManager& LogManager::GetInstance() {
     return logger;
 }
 
-const std::list<std::string>& LogManager::GetLogBuffer() {
-    return _logBuffer;
+const std::list<std::string>& LogManager::GetCustomLogBuffer() {
+    return _customLogBuffer;
+}
+const std::list<std::string>& LogManager::GetInfoLogBuffer(){
+    return _infoLogBuffer;
+}
+const std::list<std::string>& LogManager::GetWarningLogBuffer(){
+    return _warningLogBuffer;
+}
+const std::list<std::string>& LogManager::GetErrorLogBuffer(){
+    return _errorLogBuffer;
+}
+const std::list<std::string>& LogManager::GetCriticalLogBuffer(){
+    return _criticalLogBuffer;
 }
