@@ -7,6 +7,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 import pickle
 import json
 import warnings
+from collections import Counter
 
 warnings.filterwarnings('ignore')
 
@@ -31,28 +32,44 @@ def load_and_preprocess_data():
 
 
 def create_features(df):
-    """Создает признаки для модели (без user_id, anime_id, anime_rating и members)"""
+    """Создает признаки для модели (исправленная версия)"""
     features_df = df.copy()
+
+    # Сначала фильтруем данные с валидными рейтингами
+    features_df = features_df[features_df['rating_x'].notna()]
+    features_df = features_df.reset_index(drop=True)  # Сбрасываем индексы
+
+    print(f"Данных после фильтрации по рейтингам: {len(features_df)}")
 
     # 1. Обработка жанров (One-Hot Encoding)
     genres_list = []
-    for genres in features_df['genres'].fillna(''):
-        if genres:
+    for idx, genres in enumerate(features_df['genres'].fillna('')):
+        if genres and genres != 'Unknown' and str(genres) != 'nan':
             genres_list.append([g.strip() for g in genres.split('|')])
         else:
-            genres_list.append([])
+            genres_list.append(['Unknown'])  # Добавляем категорию для неизвестных жанров
 
     # Создаем бинарное представление жанров
     mlb = MultiLabelBinarizer()
     genres_encoded = mlb.fit_transform(genres_list)
     genres_df = pd.DataFrame(genres_encoded, columns=[f'genre_{genre}' for genre in mlb.classes_])
 
+    print(f"Найдено жанров: {len(mlb.classes_)}")
+    print(f"Примеры жанров: {list(mlb.classes_)[:10]}")
+
     # 2. Обработка типа аниме (Label Encoding)
     le_type = LabelEncoder()
-    features_df['type_encoded'] = le_type.fit_transform(features_df['type'].fillna('Unknown'))
+    features_df['type_filled'] = features_df['type'].fillna('Unknown')
+    features_df['type_encoded'] = le_type.fit_transform(features_df['type_filled'])
+
+    print(f"Найдено типов аниме: {len(le_type.classes_)}")
+    print(f"Типы аниме: {list(le_type.classes_)}")
 
     # 3. Числовые признаки
     features_df['episodes'] = pd.to_numeric(features_df['episodes'], errors='coerce').fillna(0)
+
+    # Логарифмируем количество эпизодов для лучшего распределения
+    features_df['episodes_log'] = np.log1p(features_df['episodes'])
 
     # 4. Статистики по пользователям и аниме
     user_stats = features_df.groupby('user_id')['rating_x'].agg(['mean', 'std', 'count']).reset_index()
@@ -67,30 +84,78 @@ def create_features(df):
     features_df = features_df.merge(user_stats, on='user_id', how='left')
     features_df = features_df.merge(anime_stats, on='anime_id', how='left')
 
+    # Убеждаемся, что все индексы совпадают
+    assert len(features_df) == len(genres_df), f"Несовпадение индексов: {len(features_df)} vs {len(genres_df)}"
+
+    # Объединяем все признаки
     final_features = pd.concat([
-        features_df[['type_encoded', 'episodes', 'user_avg_rating', 'user_rating_std', 'user_rating_count',
-                     'anime_user_rating_std', 'anime_user_rating_count']],
-        genres_df
+        features_df[['type_encoded', 'episodes', 'episodes_log', 'user_avg_rating', 'user_rating_std', 'user_rating_count',
+                     'anime_user_rating_std', 'anime_user_rating_count']].reset_index(drop=True),
+        genres_df.reset_index(drop=True)
     ], axis=1)
 
     # Целевая переменная
-    target = features_df['rating_x']
+    target = features_df['rating_x'].reset_index(drop=True)
+
+    # Проверяем на NaN значения
+    print(f"NaN в признаках: {final_features.isnull().sum().sum()}")
+    print(f"NaN в целевой переменной: {target.isnull().sum()}")
+
+    # Показываем важность признаков
+    print(f"\nИтоговые признаки ({final_features.shape[1]} штук):")
+    numeric_features = [col for col in final_features.columns if not col.startswith('genre_')]
+    genre_features = [col for col in final_features.columns if col.startswith('genre_')]
+    print(f"Числовые признаки ({len(numeric_features)}): {numeric_features}")
+    print(f"Жанровые признаки ({len(genre_features)}): {genre_features[:10]}...")
+
+    # Проверяем распределение признаков
+    print(f"\nСтатистика по основным признакам:")
+    print(f"Episodes - min: {final_features['episodes'].min()}, max: {final_features['episodes'].max()}, mean: {final_features['episodes'].mean():.2f}")
+    print(f"Type encoded - уникальных значений: {final_features['type_encoded'].nunique()}")
+    print(f"Среднее количество жанров на аниме: {final_features[genre_features].sum(axis=1).mean():.2f}")
+
+    # Показываем статистику по типам аниме
+    print("\nРаспределение по типам аниме:")
+    type_counts = features_df['type_filled'].value_counts()
+    print(type_counts.head(10))
+
+    # Показываем топ жанров
+    print("\nТоп-10 популярных жанров:")
+    all_genres = []
+    for genres in features_df['genres'].fillna(''):
+        if genres and str(genres) != 'nan':
+            all_genres.extend([g.strip() for g in genres.split('|')])
+    genre_counts = Counter(all_genres)
+    print(genre_counts.most_common(10))
 
     return final_features, target, mlb, le_type
 
 
 def create_feature_only_model(num_features):
-    """Создает модель, использующую только признаки (без эмбеддингов)"""
+    """Создает улучшенную модель, использующую только признаки"""
     features_input = tf.keras.layers.Input(shape=(num_features,), name='features')
 
-    x = tf.keras.layers.Dense(256, activation='relu')(features_input)
+    # Первый блок
+    x = tf.keras.layers.Dense(512, activation='relu')(features_input)
     x = tf.keras.layers.BatchNormalization()(x)
     x = tf.keras.layers.Dropout(0.3)(x)
 
+    # Второй блок
+    x = tf.keras.layers.Dense(256, activation='relu')(x)
+    x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.Dropout(0.3)(x)
+
+    # Третий блок с residual connection
     x = tf.keras.layers.Dense(128, activation='relu')(x)
     x = tf.keras.layers.BatchNormalization()(x)
     x = tf.keras.layers.Dropout(0.2)(x)
 
+    # Добавляем пропуск соединения
+    shortcut = tf.keras.layers.Dense(128, activation='relu')(features_input)
+    x = tf.keras.layers.Add()([x, shortcut])
+    x = tf.keras.layers.Activation('relu')(x)
+
+    # Финальные слои
     x = tf.keras.layers.Dense(64, activation='relu')(x)
     x = tf.keras.layers.Dropout(0.2)(x)
 
@@ -114,10 +179,10 @@ def train_feature_model(features_df, target):
 
     # Разделение данных: обучение, валидация, тест (60/20/20)
     X_train, X_temp, y_train, y_temp = train_test_split(
-        other_features_scaled, target, test_size=0.4, random_state=42
+        other_features_scaled, target, test_size=0.4, random_state=42, stratify=None
     )
     X_val, X_test, y_val, y_test = train_test_split(
-        X_temp, y_temp, test_size=0.5, random_state=42
+        X_temp, y_temp, test_size=0.5, random_state=42, stratify=None
     )
 
     print(f"Размер обучающей выборки: {len(X_train)}")
@@ -127,8 +192,12 @@ def train_feature_model(features_df, target):
     num_features = other_features_scaled.shape[1]
 
     model = create_feature_only_model(num_features)
+
+    # Используем более агрессивный оптимизатор
+    optimizer = tf.keras.optimizers.Adam(learning_rate=0.001, beta_1=0.9, beta_2=0.999)
+
     model.compile(
-        optimizer=tf.keras.optimizers.Adam(learning_rate=0.001),
+        optimizer=optimizer,
         loss='mse',
         metrics=['mae']
     )
@@ -139,10 +208,13 @@ def train_feature_model(features_df, target):
     # Callbacks
     callbacks = [
         tf.keras.callbacks.EarlyStopping(
-            monitor='val_loss', patience=15, restore_best_weights=True
+            monitor='val_loss', patience=20, restore_best_weights=True, verbose=1
         ),
         tf.keras.callbacks.ReduceLROnPlateau(
-            monitor='val_loss', factor=0.5, patience=7, min_lr=1e-6
+            monitor='val_loss', factor=0.5, patience=10, min_lr=1e-7, verbose=1
+        ),
+        tf.keras.callbacks.ModelCheckpoint(
+            'best_model.h5', monitor='val_loss', save_best_only=True, verbose=1
         )
     ]
 
@@ -150,8 +222,8 @@ def train_feature_model(features_df, target):
     history = model.fit(
         X_train, y_train,
         validation_data=(X_val, y_val),
-        epochs=10,
-        batch_size=64,
+        epochs=10,  # Увеличиваем количество эпох
+        batch_size=128,  # Увеличиваем batch size
         callbacks=callbacks,
         verbose=1
     )
@@ -185,6 +257,14 @@ def evaluate_model(model, X_test, y_test):
         if mask.sum() > 0:
             range_mae = mean_absolute_error(y_test[mask], y_pred[mask])
             print(f"  Рейтинг {low}-{high}: MAE = {range_mae:.4f} (записей: {mask.sum()})")
+
+    # Показываем статистику предсказаний
+    print(f"\nСтатистика предсказаний:")
+    print(f"Минимум предсказания: {y_pred.min():.2f}")
+    print(f"Максимум предсказания: {y_pred.max():.2f}")
+    print(f"Среднее предсказание: {y_pred.mean():.2f}")
+    print(f"Стандартное отклонение предсказаний: {y_pred.std():.2f}")
+
     print("=" * 50)
     return y_pred
 
@@ -234,25 +314,28 @@ def save_model_and_metadata(model, scaler, mlb, le_type, feature_columns):
 
 def plot_training_history(history):
     """Отображает историю обучения"""
-    import matplotlib.pyplot as plt
+    try:
+        import matplotlib.pyplot as plt
 
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
-    ax1.plot(history.history['loss'], label='Training Loss')
-    ax1.plot(history.history['val_loss'], label='Validation Loss')
-    ax1.set_title('Model Loss')
-    ax1.set_xlabel('Epoch')
-    ax1.set_ylabel('Loss')
-    ax1.legend()
+        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
+        ax1.plot(history.history['loss'], label='Training Loss')
+        ax1.plot(history.history['val_loss'], label='Validation Loss')
+        ax1.set_title('Model Loss')
+        ax1.set_xlabel('Epoch')
+        ax1.set_ylabel('Loss')
+        ax1.legend()
 
-    ax2.plot(history.history['mae'], label='Training MAE')
-    ax2.plot(history.history['val_mae'], label='Validation MAE')
-    ax2.set_title('Model MAE')
-    ax2.set_xlabel('Epoch')
-    ax2.set_ylabel('MAE')
-    ax2.legend()
+        ax2.plot(history.history['mae'], label='Training MAE')
+        ax2.plot(history.history['val_mae'], label='Validation MAE')
+        ax2.set_title('Model MAE')
+        ax2.set_xlabel('Epoch')
+        ax2.set_ylabel('MAE')
+        ax2.legend()
 
-    plt.tight_layout()
-    plt.show()
+        plt.tight_layout()
+        plt.show()
+    except ImportError:
+        print("Matplotlib не установлен, пропускаем построение графиков")
 
 
 def main():
@@ -261,11 +344,6 @@ def main():
 
     print("\nСоздание признаков (без user_id и anime_id)...")
     features, target, mlb, le_type = create_features(merged_df)
-
-    # Удаление строк с NaN
-    valid_indices = ~(features.isnull().any(axis=1) | target.isnull())
-    features = features[valid_indices]
-    target = target[valid_indices]
 
     print(f"Финальный размер датасета: {len(features)}")
     print(f"Количество признаков: {features.shape[1]}")
@@ -291,7 +369,11 @@ def main():
     save_model_and_metadata(model, scaler, mlb, le_type, feature_columns)
 
     print("\nМодель успешно обучена и сохранена!")
-    # plot_training_history(history)  # опционально: показать графики истории обучения
+
+    # Опционально: показать графики истории обучения
+    plot_training_history(history)
+
+    return model
 
 
 if __name__ == "__main__":
