@@ -27,20 +27,29 @@ private:
 
     std::vector<AnimeEntry> all_anime;
 
+    bool _isMetadataLoaded = false;
+    bool _isModelLoaded = false;
+    bool _isDatabaseLoaded = false;
+
 public:
     void LoadMetadata(const std::string& path);
     void LoadModel(const std::string& path);
     void LoadDataBase(const std::string& path);
 
     void PredictOnDatabase();
-    void PredictOnUI();
+    void PredictOnUI(
+            const std::string& animeName,
+            const std::string& animeType,
+            const std::string& episodeCount,
+            const std::string& genres);
 
+    bool GetLoadedStatus() const;
 private:
     std::vector<float> BuildInputVector(const AnimeEntry& anime,
                                         const nlohmann::json& metadata,
                                         const std::vector<std::string>& feature_columns);
 
-    float predict_rating(tflite::Interpreter* interpreter, const std::vector<float>& features);
+    float PredictRating(tflite::Interpreter* interpreter, const std::vector<float>& features);
 };
 
 #endif //ANIMEPREDICTOR_MODEL_H

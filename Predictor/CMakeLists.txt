@@ -104,7 +104,6 @@ add_executable(Predictor
         misc/Texture.cpp
 
         Model/Model.cpp
-        Model/Loader.cpp
 
         ImGUI/ImGUI_Manager.cpp
         ImGUI/Entities/ImGUI_Training.cpp

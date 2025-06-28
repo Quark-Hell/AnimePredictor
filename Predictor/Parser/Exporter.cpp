@@ -6,21 +6,23 @@
 #include <cmath>
 
 void FilterStats::print() const {
-    LogManager::LogInfo("=== DETAILED FILTER STATISTICS ===");
-    LogManager::LogInfo("Initial anime entries: " + std::to_string(initial_anime_count));
-    LogManager::LogInfo("Initial rating entries: " + std::to_string(initial_rating_count));
-    LogManager::LogInfo("Removed invalid ratings (-1): " + std::to_string(removed_invalid_ratings));
-    LogManager::LogInfo("Removed NaN/invalid values: " + std::to_string(removed_nan_values));
-    LogManager::LogInfo("Removed anime with low rating count: " + std::to_string(removed_low_rating_count));
-    LogManager::LogInfo("Removed ratings from inactive users: " + std::to_string(removed_inactive_users));
-    LogManager::LogInfo("Final anime entries: " + std::to_string(final_anime_count));
-    LogManager::LogInfo("Final rating entries: " + std::to_string(final_rating_count));
+    static std::string bufferName = "Training";
+
+    LogManager::LogCustom(false, bufferName, "=== DETAILED FILTER STATISTICS ===");
+    LogManager::LogCustom(false, bufferName, "Initial anime entries: " + std::to_string(initial_anime_count));
+    LogManager::LogCustom(false, bufferName, "Initial rating entries: " + std::to_string(initial_rating_count));
+    LogManager::LogCustom(false, bufferName, "Removed invalid ratings (-1): " + std::to_string(removed_invalid_ratings));
+    LogManager::LogCustom(false, bufferName, "Removed NaN/invalid values: " + std::to_string(removed_nan_values));
+    LogManager::LogCustom(false, bufferName, "Removed anime with low rating count: " + std::to_string(removed_low_rating_count));
+    LogManager::LogCustom(false, bufferName, "Removed ratings from inactive users: " + std::to_string(removed_inactive_users));
+    LogManager::LogCustom(false, bufferName, "Final anime entries: " + std::to_string(final_anime_count));
+    LogManager::LogCustom(false, bufferName, "Final rating entries: " + std::to_string(final_rating_count));
 
     double percent_removed = (1.0 - static_cast<double>(final_rating_count) / initial_rating_count) * 100.0;
     std::string str = std::to_string(percent_removed);
 
-    LogManager::LogInfo("Data reduction: " + str + "%");
-    LogManager::LogInfo("===================================");
+    LogManager::LogCustom(false, bufferName, "Data reduction: " + str + "%");
+    LogManager::LogCustom(false, bufferName, "===================================");
 }
 
 std::unordered_map<int, int> Exporter::GetAnimeRatingCount(const std::vector<UserRatingTable>& ratingData) {
@@ -167,34 +169,34 @@ void Exporter::ExportFilteredDataToCSV(const std::string& animePath,
                                        int minAnimeRatings,
                                        int minUserRatings) {
 
-    namespace fs = std::filesystem;
+    static std::string bufferName = "Training";
     FilterStats stats;
 
-    LogManager::LogInfo("Starting comprehensive data filtering...");
+    LogManager::LogCustom(false, bufferName, "Starting comprehensive data filtering...");
 
     // === Создание директорий, если не существуют ===
     for (const auto& path : {animePath, ratingPath}) {
-        fs::path dir = fs::path(path).parent_path();
-        if (!dir.empty() && !fs::exists(dir)) {
-            fs::create_directories(dir);
+        std::filesystem::path dir = std::filesystem::path(path).parent_path();
+        if (!dir.empty() && !std::filesystem::exists(dir)) {
+            std::filesystem::create_directories(dir);
         }
     }
 
     // Шаг 1: Фильтрация базовых данных (удаление NaN, невалидных значений)
-    LogManager::LogInfo("Step 1: Filtering invalid data...");
+    LogManager::LogCustom(false, bufferName, "Step 1: Filtering invalid data...");
     auto filteredAnime = FilterAnimeData(animeData, stats);
     auto filteredRatings = FilterRatingData(ratingData, stats);
 
     // Шаг 2: Получение валидных ID на основе минимальных требований
-    LogManager::LogInfo("Step 2: Applying minimum requirements filter...");
+    LogManager::LogCustom(false, bufferName, "Step 2: Applying minimum requirements filter...");
     auto [validAnimeIds, validUserIds] = GetValidIds(filteredAnime, filteredRatings,
                                                      minAnimeRatings, minUserRatings, stats);
 
-    LogManager::LogInfo("Valid anime IDs: " + std::to_string(validAnimeIds.size()));
-    LogManager::LogInfo("Valid user IDs: " + std::to_string(validUserIds.size()));
+    LogManager::LogCustom(false, bufferName, "Valid anime IDs: " + std::to_string(validAnimeIds.size()));
+    LogManager::LogCustom(false, bufferName, "Valid user IDs: " + std::to_string(validUserIds.size()));
 
     // Шаг 3: Экспорт отфильтрованных данных
-    LogManager::LogInfo("Step 3: Exporting filtered data...");
+    LogManager::LogCustom(false, bufferName, "Step 3: Exporting filtered data...");
     ExportFilteredAnime(animePath, filteredAnime, validAnimeIds, stats);
     ExportFilteredRating(ratingPath, filteredRatings, validAnimeIds, validUserIds, stats);
 
@@ -206,6 +208,8 @@ void Exporter::ExportFilteredAnime(const std::string& animePath,
                                    const std::vector<AnimeTable>& animeData,
                                    const std::unordered_set<int>& validAnimeIds,
                                    FilterStats& stats) {
+
+    static std::string bufferName = "Training";
 
     std::ofstream animeFile(animePath);
     if (!animeFile.is_open()) {
@@ -251,7 +255,7 @@ void Exporter::ExportFilteredAnime(const std::string& animePath,
     }
 
     animeFile.close();
-    LogManager::LogInfo("Exported " + std::to_string(stats.final_anime_count) + " anime entries to " + animePath);
+    LogManager::LogCustom(false, bufferName, "Exported " + std::to_string(stats.final_anime_count) + " anime entries to " + animePath);
 }
 
 void Exporter::ExportFilteredRating(const std::string& ratingPath,
@@ -259,6 +263,8 @@ void Exporter::ExportFilteredRating(const std::string& ratingPath,
                                     const std::unordered_set<int>& validAnimeIds,
                                     const std::unordered_set<int>& validUserIds,
                                     FilterStats& stats) {
+
+    static std::string bufferName = "Training";
 
     std::ofstream ratingFile(ratingPath);
     if (!ratingFile.is_open()) {
@@ -287,5 +293,5 @@ void Exporter::ExportFilteredRating(const std::string& ratingPath,
     }
 
     ratingFile.close();
-    LogManager::LogInfo("Exported " + std::to_string(stats.final_rating_count) + " rating entries to " + ratingPath);
+    LogManager::LogCustom(false,bufferName,"Exported " + std::to_string(stats.final_rating_count) + " rating entries to " + ratingPath);
 }

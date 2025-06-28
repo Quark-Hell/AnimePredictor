@@ -10,11 +10,16 @@
 #include <algorithm>
 
 void Model::LoadMetadata(const std::string& path) {
+    static std::string bufferName = "Analysis";
+
     std::ifstream in(path);
     if (!in.is_open()) {
-        LogManager::LogCritical("metadata.json not found " + __LOGERROR__);
+        _isMetadataLoaded = false;
+        LogManager::LogCustom(false, bufferName, "metadata.json not found " + __LOGERROR__);
+        LogManager::LogError("metadata.json not found " + __LOGERROR__);
     }
     in >> _metadata;
+    _isMetadataLoaded = true;
 }
 
 void Model::LoadModel(const std::string& path) {
@@ -23,14 +28,20 @@ void Model::LoadModel(const std::string& path) {
     _model = tflite::FlatBufferModel::BuildFromFile(path.c_str());
     tflite::InterpreterBuilder(*_model, _resolver)(&_interpreter);
     _interpreter->AllocateTensors();
+
+    _isModelLoaded = true;
 }
 
 void Model::LoadDataBase(const std::string& path) {
+    static std::string bufferName = "Analysis";
+
     all_anime.clear();
 
     std::ifstream in(path);
     if (!in.is_open()){
-        LogManager::LogCritical("anime.csv not found " + __LOGERROR__);
+        LogManager::LogCustom(false, bufferName, "anime.csv not found " + __LOGERROR__);
+        LogManager::LogError("anime.csv not found " + __LOGERROR__);
+        _isDatabaseLoaded = false;
     }
 
     std::string line;
@@ -71,49 +82,52 @@ void Model::LoadDataBase(const std::string& path) {
         entry.members = std::stoi(fields[6]);
         all_anime.push_back(entry);
     }
+
+    _isDatabaseLoaded = true;
 }
 
 void Model::PredictOnDatabase() {
+    static std::string bufferName = "Analysis";
+
     std::random_device rd;
     std::mt19937 g(rd());
     std::shuffle(all_anime.begin(), all_anime.end(), g);
 
-    LogManager::LogCustom(false,"","Random 10 Anime Predictions:");
-    LogManager::LogCustom(false,"","---------------------------------------------");
+    LogManager::LogCustom(false, bufferName,"Random 10 Anime Predictions:");
+    LogManager::LogCustom(false, bufferName,"---------------------------------------------");
 
     for (int i = 0; i < 10 && i < all_anime.size(); ++i) {
         const auto& anime = all_anime[i];
         auto input = BuildInputVector(anime, _metadata, _featureColumns);
-        float prediction = predict_rating(_interpreter.get(), input);
+        float prediction = PredictRating(_interpreter.get(), input);
 
-        LogManager::LogCustom(false,"","[" + std::to_string(i + 1) + "] " + anime.name);
-        LogManager::LogCustom(false,"","   True Rating      : " + std::to_string(anime.rating));
-        LogManager::LogCustom(false,"","   Predicted Rating : " + std::to_string(prediction));
-        LogManager::LogCustom(false,"","---------------------------------------------");
+        LogManager::LogCustom(false, bufferName,"[" + std::to_string(i + 1) + "] " + anime.name);
+        LogManager::LogCustom(false, bufferName,"   True Rating      : " + std::to_string(anime.rating));
+        LogManager::LogCustom(false, bufferName,"   Predicted Rating : " + std::to_string(prediction));
+        LogManager::LogCustom(false, bufferName,"---------------------------------------------");
     }
 }
 
-void Model::PredictOnUI() {
-    LogManager::LogInfo("Введите данные для предсказания рейтинга нового аниме");
+void Model::PredictOnUI(
+        const std::string& animeName,
+        const std::string& animeType,
+        const std::string& episodeCount,
+        const std::string& genres) {
+
+    static std::string bufferName = "Analysis";
+
     AnimeEntry custom;
     std::string line;
 
-    std::cout << "Название аниме: ";
-    std::getline(std::cin, custom.name);
+    custom.name = animeName;
+    custom.type = animeType;
+    custom.episodes = episodeCount.empty() ? 1 : std::stoi(episodeCount);
 
-    std::cout << "Тип аниме (например, TV, Movie, OVA): ";
-    std::getline(std::cin, custom.type);
-
-    std::cout << "Количество эпизодов: ";
-    std::getline(std::cin, line);
-    custom.episodes = line.empty() ? 1 : std::stoi(line);
-
-    std::cout << "Жанры (через запятую, например Action,Romance): ";
-    std::getline(std::cin, line);
-    std::stringstream genre_stream(line);
+    std::stringstream genre_stream(genres);
     std::string genre;
+
     while (std::getline(genre_stream, genre, ',')) {
-        // Удаление лишних пробелов
+        // Erase spaces
         genre.erase(0, genre.find_first_not_of(" \t"));
         genre.erase(genre.find_last_not_of(" \t") + 1);
         if (!genre.empty()) {
@@ -121,14 +135,14 @@ void Model::PredictOnUI() {
         }
     }
 
-    // Поскольку модель не использует эти поля, задаём значения по умолчанию:
+    // Default value
     custom.rating = 10.0f;
     custom.members = 0;
 
     auto input = BuildInputVector(custom, _metadata, _featureColumns);
-    float prediction = predict_rating(_interpreter.get(), input);
+    float prediction = PredictRating(_interpreter.get(), input);
 
-    std::cout << "\n📈 Предсказанный рейтинг для \"" << custom.name << "\" = " << prediction << "\n";
+    LogManager::LogCustom(false, bufferName, "Predicted Rating for \"" + custom.name + "\" = " + std::to_string(prediction));
 }
 
 std::vector<float> Model::BuildInputVector(const AnimeEntry& anime,
@@ -181,7 +195,7 @@ std::vector<float> Model::BuildInputVector(const AnimeEntry& anime,
 }
 
 
-float Model::predict_rating(tflite::Interpreter* interpreter, const std::vector<float>& features) {
+float Model::PredictRating(tflite::Interpreter* interpreter, const std::vector<float>& features) {
     int input_idx = interpreter->inputs()[0];
     float* input_tensor = interpreter->typed_input_tensor<float>(input_idx);
     std::copy(features.begin(), features.end(), input_tensor);
@@ -192,4 +206,11 @@ float Model::predict_rating(tflite::Interpreter* interpreter, const std::vector<
 
     float* output = interpreter->typed_output_tensor<float>(0);
     return output[0];
+}
+
+bool Model::GetLoadedStatus() const {
+    if (_isMetadataLoaded && _isModelLoaded && _isDatabaseLoaded) {
+        return true;
+    }
+    return false;
 }

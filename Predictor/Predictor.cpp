@@ -24,7 +24,7 @@ int main() {
         mgr.AddEntity<ImGUI_EndMain>("Main", "EndMain");
 
         WindowManager::Start(1280, 720, "Predictor");
-        WindowManager::SetWindowIcon("assets/images/reduced.jpg");
+        WindowManager::SetWindowIcon("assets/images/japan.png");
 
         WindowManager::ChangeFonts("assets/fonts/Roboto-VariableFont.ttf");
         WindowManager::SetClearColor(RGBAColor{ 0.5f, 0.5f, 0.5f, 1.0f} );

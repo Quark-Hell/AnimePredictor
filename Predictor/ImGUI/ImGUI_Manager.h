@@ -19,7 +19,9 @@ public:
     static ImGUI_Manager& GetInstance();
 
     ImGUI_Manager(const ImGUI_Manager&) = delete;
+    ImGUI_Manager(ImGUI_Manager&&) = delete;
     ImGUI_Manager& operator=(const ImGUI_Manager&) = delete;
+    ImGUI_Manager& operator=(ImGUI_Manager&&) = delete;
 
     template<typename T, typename... Args>
     void AddEntity(const std::string& parent_name, Args&&... args) {

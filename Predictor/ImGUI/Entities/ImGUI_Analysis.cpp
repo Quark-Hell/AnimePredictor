@@ -2,8 +2,6 @@
 
 #include "Logger/LogManager.h"
 
-#include "Model/Loader.h"
-
 bool ImGUI_Analysis::Render() {
     if (ImGui::BeginTabItem("Анализ")) {
         ImGui::Text("Интерфейс для обучения модели");
@@ -23,20 +21,28 @@ bool ImGUI_Analysis::Render() {
         InputTextStdString("Название аниме", animeName);
         InputTextStdString("Тип аниме", animeType);
         InputTextStdString("Количество эпизодов", animeEpisodes);
-        InputTextStdString("Жанры (через |)", animeGenres);
+        InputTextStdString("Жанры (через \",\")", animeGenres);
+
+        if (ImGui::Button("Загрузить модель")) {
+            ImGUI_Analysis::LoadModel();
+        }
+
+        ImGui::SameLine();
 
         if (ImGui::Button("Предсказать из базы данных")) {
-            Loader loader;
-            loader.Test();
+            if (_predictor->GetLoadedStatus()) {
+                _predictor->PredictOnDatabase();
+            }
         }
 
         ImGui::SameLine();
 
         if (ImGui::Button("Предсказать новое")) {
-            // TODO: Добавь логику создания новой записи и предсказания
+            _predictor->PredictOnUI(animeName, animeType, animeEpisodes, animeGenres);
         }
 
         LogMenu();
+        LoadStatus();
 
         ImGui::EndTabItem();
         return true;
@@ -44,34 +50,67 @@ bool ImGUI_Analysis::Render() {
     return false;
 }
 
+void ImGUI_Analysis::LoadStatus() {
+    const char* message = _predictor->GetLoadedStatus() ? "Модель загружена" : "Модель не загружена";
+    ImVec4 color = _predictor->GetLoadedStatus() ? ImVec4(0.2f, 0.8f, 0.2f, 1.0f) : ImVec4(0.9f, 0.1f, 0.1f, 1.0f);
+
+    ImVec2 windowPos = ImGui::GetIO().DisplaySize;
+    ImVec2 padding = ImVec2(10, 10);
+    windowPos.x -= padding.x;
+    windowPos.y -= padding.y;
+
+    ImGui::SetNextWindowBgAlpha(0.85f);
+    ImGui::SetNextWindowPos(windowPos, ImGuiCond_Always, ImVec2(1.0f, 1.0f));
+    ImGui::Begin("ModelStatus", nullptr,
+                 ImGuiWindowFlags_NoDecoration |
+                 ImGuiWindowFlags_AlwaysAutoResize |
+                 ImGuiWindowFlags_NoFocusOnAppearing |
+                 ImGuiWindowFlags_NoNav |
+                 ImGuiWindowFlags_NoInputs);
+
+    ImGui::TextColored(color, "%s", message);
+    ImGui::End();
+}
+
+void ImGUI_Analysis::LoadModel() {
+    static std::string bufferName = "Analysis";
+
+    try {
+        _predictor->LoadMetadata("Training/model_export/metadata.json");
+        _predictor->LoadModel("Training/model_export/model.tflite");
+
+        _predictor->LoadDataBase("Training/out/anime.csv");
+    } catch (const std::exception& ex) {
+        LogManager::LogCustom(false, bufferName, std::string("Error: ") + ex.what() + " " + __LOGERROR__);
+        LogManager::LogError(std::string("Error: ") + ex.what() + " " + __LOGERROR__);
+    }
+}
+
 void ImGUI_Analysis::LogMenu() {
     LogManager& log = LogManager::GetInstance();
 
-    // Буфер, необходимый для отображения
+    static std::string bufferName = "Analysis";
+
     static size_t messageCount = 0;
     static std::string buffer;
     static size_t previousLogSize = 0;
 
     size_t counter = 0;
-    for(const auto& it : log.GetCustomLogBuffer()) {
-        if (messageCount == log.GetCustomLogBuffer().size()) { break; }
+    for(const auto& it : log.GetCustomLogBuffer(bufferName)) {
+        if (messageCount == log.GetCustomLogBuffer(bufferName).size()) { break; }
         if (counter < messageCount) { counter++; continue; }
-
-        //Remove format
 
         buffer += it + "\n";
         counter++;
         messageCount = counter;
     }
 
-    // Начинаем Child-зону для скроллинга
     ImGui::BeginChild("LogScrollRegion", ImVec2(-1, -1), true, ImGuiWindowFlags_HorizontalScrollbar);
 
     ImGui::TextUnformatted(buffer.c_str());
 
-    // Автоскролл, если добавлены новые данные
     if (buffer.size() > previousLogSize) {
-        ImGui::SetScrollHereY(1.0f);  // Прокрутка к низу
+        ImGui::SetScrollHereY(1.0f);
         previousLogSize = buffer.size();
     }
 

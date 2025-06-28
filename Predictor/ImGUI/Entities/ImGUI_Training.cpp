@@ -51,6 +51,7 @@ void ImGUI_Training::TrainButton() {
 }
 
 void ImGUI_Training::LogMenu() {
+    static std::string bufferName = "Training";
     LogManager& log = LogManager::GetInstance();
 
     // Буфер, необходимый для отображения
@@ -59,8 +60,8 @@ void ImGUI_Training::LogMenu() {
     static size_t previousLogSize = 0;
 
     size_t counter = 0;
-    for(const auto& it : log.GetCustomLogBuffer()) {
-        if (messageCount == log.GetCustomLogBuffer().size()) { break; }
+    for(const auto& it : log.GetCustomLogBuffer(bufferName)) {
+        if (messageCount == log.GetCustomLogBuffer(bufferName).size()) { break; }
         if (counter < messageCount) { counter++; continue; }
 
         //Remove format
@@ -92,25 +93,26 @@ void ImGUI_Training::TrainModel(const std::string& animePath, const std::string&
 }
 
 void ImGUI_Training::RunDocker() {
+    static std::string bufferName = "Training";
     // Проверка Docker-образа
     std::string imageName = "anime-trainer";
     std::string containerName = "anime-trainer-container";
 
-    LogManager::LogInfo("[Docker] Проверка наличия образа " + imageName + "...");
+    LogManager::LogCustom(false, bufferName,"[Docker] Checking for image availability " + imageName + "...");
     std::string searchCommand = "docker image inspect " + imageName + " > /dev/null 2>&1";
     int checkResult = system(searchCommand.c_str());
 
     // Сборка образа при необходимости
     if (checkResult != 0) {
-        LogManager::LogWarning("[Docker] Image not found. Building from Dockerfile...");
+        LogManager::LogCustom(false, bufferName, "[Docker] Image not found. Building from Dockerfile...");
         std::string buildCommand = "docker build -t " + imageName + " -f Training/Dockerfile Training";
         int buildResult = system(buildCommand.c_str());
         if (buildResult != 0) {
-            LogManager::LogError("Error while building Docker image");
+            LogManager::LogCustom(false, bufferName, "Error while building Docker image");
             return;
         }
     } else {
-        LogManager::LogInfo("[Docker] Image found");
+        LogManager::LogCustom(false, bufferName, "[Docker] Image found");
     }
 
     // Подготовка путей
@@ -122,17 +124,17 @@ void ImGUI_Training::RunDocker() {
     std::filesystem::create_directories(dockerModelExportPath);
 
     // Запуск контейнера
-    LogManager::LogInfo("[Docker] Running a container...");
+    LogManager::LogCustom(false, bufferName, "[Docker] Running a container...");
     std::string runCommand = "docker run -it --name " + containerName + " " + imageName;
     int result = system(runCommand.c_str());
 
     if (result != 0) {
-        LogManager::LogError("Container training failed with error " + __LOGERROR__);
+        LogManager::LogCustom(false, bufferName, "Container training failed with error " + __LOGERROR__);
     } else {
         std::string copyCommand = "docker cp " + containerName + ":/app/model_export/. ./Training/model_export";
         system(copyCommand.c_str());
 
-        LogManager::LogInfo("Training completed. Model files are available in Training/model_export");
+        LogManager::LogCustom(false, bufferName, "Training completed. Model files are available in Training/model_export");
     }
 
     std::string removeCommand = "docker rm " + containerName;

@@ -8,7 +8,7 @@
 
 class Texture {
 public:
-    explicit Texture(const std::string& filepath, bool isBind = true, bool isFree = true);
+    explicit Texture(const std::string& filepath, bool isBind = true);
     ~Texture();
 
     void Bind(unsigned int slot = 0) const;
@@ -20,6 +20,11 @@ public:
     [[nodiscard]] int GetTextureID() const;
 
     unsigned char* GetPixels();
+
+    void Flip();
+    void Mirror();
+
+    void FreeBuffer();
 
 private:
     GLuint _textureID = 0;

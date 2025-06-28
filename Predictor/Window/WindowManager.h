@@ -2,21 +2,28 @@
 #define ANIMEPREDICTOR_WINDOWMANAGER_H
 
 #include "Window.h"
+#include "misc/Texture.h"
+
 #include <memory>
 
 class WindowManager {
 private:
+    std::unique_ptr<Texture> _icon;
+    GLFWimage _images[1];
+
     static inline std::string glsl_version = "#version 130";
 
 private:
-    static Window& GetInstance(float width = 1280, float height = 720, std::string name = "Unnamed");
+    WindowManager() = default;
+
+    static WindowManager& GetInstance();
+    static Window& GetWindow(float width = 1280, float height = 720, std::string name = "Unnamed");
     static int GetFlags();
     static void SetFlags();
 
     static void SetupImGui();
 
 public:
-    WindowManager() = delete;
     WindowManager(const WindowManager&) = delete;
     WindowManager(WindowManager&&) = delete;
     WindowManager& operator=(const WindowManager&) = delete;

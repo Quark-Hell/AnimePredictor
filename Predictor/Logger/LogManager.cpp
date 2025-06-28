@@ -52,18 +52,25 @@ LogManager& LogManager::GetInstance() {
     return logger;
 }
 
-const std::list<std::string>& LogManager::GetCustomLogBuffer() {
-    return _customLogBuffer;
+const std::vector<std::string>& LogManager::GetCustomLogBuffer(const std::string& bufferName) {
+    auto it = _customLogBuffer.find(bufferName);
+    if (it != _customLogBuffer.end()) {
+        return it->second;
+    }
+
+    static const std::vector<std::string> emptyBuffer;
+    return emptyBuffer;
 }
-const std::list<std::string>& LogManager::GetInfoLogBuffer(){
+
+const std::vector<std::string>& LogManager::GetInfoLogBuffer(){
     return _infoLogBuffer;
 }
-const std::list<std::string>& LogManager::GetWarningLogBuffer(){
+const std::vector<std::string>& LogManager::GetWarningLogBuffer(){
     return _warningLogBuffer;
 }
-const std::list<std::string>& LogManager::GetErrorLogBuffer(){
+const std::vector<std::string>& LogManager::GetErrorLogBuffer(){
     return _errorLogBuffer;
 }
-const std::list<std::string>& LogManager::GetCriticalLogBuffer(){
+const std::vector<std::string>& LogManager::GetCriticalLogBuffer(){
     return _criticalLogBuffer;
 }

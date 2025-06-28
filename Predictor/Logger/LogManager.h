@@ -2,13 +2,13 @@
 #define ANIMEPREDICTOR_LOGMANAGER_H
 
 #include <vector>
+#include <map>
 #include <string>
 #include <fstream>
 #include <chrono>
 #include <sstream>
 #include <iostream>
 #include <filesystem>
-#include <list>
 #include <mutex>
 
 #define __LOGERROR__ (std::string(__FILE__ ":") + std::to_string(__LINE__))
@@ -18,11 +18,12 @@ class LogManager {
 private:
     std::ofstream _logFile;
 
-    std::list<std::string> _customLogBuffer;
-    std::list<std::string> _infoLogBuffer;
-    std::list<std::string> _warningLogBuffer;
-    std::list<std::string> _errorLogBuffer;
-    std::list<std::string> _criticalLogBuffer;
+    std::map<std::string,std::vector<std::string>> _customLogBuffer;
+
+    std::vector<std::string> _infoLogBuffer;
+    std::vector<std::string> _warningLogBuffer;
+    std::vector<std::string> _errorLogBuffer;
+    std::vector<std::string> _criticalLogBuffer;
 
     std::mutex _mutex;
 
@@ -44,21 +45,20 @@ public:
 
     static LogManager& GetInstance();
 
-    const std::list<std::string> &GetCustomLogBuffer();
-    const std::list<std::string> &GetInfoLogBuffer();
-    const std::list<std::string> &GetWarningLogBuffer();
-    const std::list<std::string> &GetErrorLogBuffer();
-    const std::list<std::string> &GetCriticalLogBuffer();
+    const std::vector<std::string> &GetCustomLogBuffer(const std::string& bufferName);
+
+    const std::vector<std::string> &GetInfoLogBuffer();
+    const std::vector<std::string> &GetWarningLogBuffer();
+    const std::vector<std::string> &GetErrorLogBuffer();
+    const std::vector<std::string> &GetCriticalLogBuffer();
 
     template<typename... Data>
-    static void LogCustom(bool isAddTime, const std::string& type, const Data &... data) {
+    static void LogCustom(bool isAddTime, const std::string& bufferName, const Data &... data) {
         LogManager& logger = LogManager::GetInstance();
 
         std::ostringstream messageStream;
         if (isAddTime) {
-            messageStream << "[" << logger.GetCurrentTime() << "] " + type;
-        } else{
-            messageStream << type;
+            messageStream << "[" << logger.GetCurrentTime() << "] ";
         }
 
         ((messageStream << " " << data), ...);
@@ -69,7 +69,7 @@ public:
         logger._logFile.open(logger.GetLogFileName(), std::ios::app);
 
         logger.WriteToFile(messageStream.str());
-        logger._customLogBuffer.emplace_back(rawMessage);
+        logger._customLogBuffer[bufferName].emplace_back(rawMessage);
         std::cout << message << std::endl;
         logger._logFile.close();
     }

@@ -1,8 +1,8 @@
 #include "Parser.h"
 
 #include "Exporter.h"
+#include "Logger/LogManager.h"
 
-#include <iostream>
 #include <filesystem>
 
 Parser& Parser::GetInstance() {
@@ -11,13 +11,18 @@ Parser& Parser::GetInstance() {
 }
 
 void Parser::ImportTables(const std::string& animePath, const std::string& ratingPath) {
+    static std::string bufferName = "Training";
+
     const std::filesystem::path animeTableSource = std::filesystem::current_path() / animePath;
     const std::filesystem::path userRatingTableSource = std::filesystem::current_path() / ratingPath;
 
     animeTable = AnimeTable::ParseCSV(animeTableSource);
     userRatingTable = UserRatingTable::ParseCSV(userRatingTableSource);
 
-    std::cout << "Imported " << userRatingTable.size() << " ratings and " << animeTable.size() << " anime." << std::endl;
+    LogManager::LogCustom(
+            false,
+            bufferName,
+            "Imported " + std::to_string(userRatingTable.size()) + " ratings and " + std::to_string(animeTable.size()) + " anime.");
 }
 
 void Parser::ExportTables(const std::string& animePath, const std::string& ratingPath) {

@@ -5,7 +5,7 @@
 
 #include "Logger/LogManager.h"
 
-Texture::Texture(const std::string& filepath, bool isBind, bool isFree) {
+Texture::Texture(const std::string& filepath, bool isBind) {
     stbi_set_flip_vertically_on_load(true);
 
     _data = stbi_load(filepath.c_str(), &_width, &_height, &_channels, 0);
@@ -30,23 +30,49 @@ Texture::Texture(const std::string& filepath, bool isBind, bool isFree) {
         glTexImage2D(GL_TEXTURE_2D, 0, format, _width, _height, 0, format, GL_UNSIGNED_BYTE, _data);
         glGenerateMipmap(GL_TEXTURE_2D);
 
-    }
-
-    if (isFree) {
-        stbi_image_free(_data);
-        _data = nullptr;
-    }
-
-    if (isBind) {
         glBindTexture(GL_TEXTURE_2D, 0);
     }
 }
 
-Texture::~Texture() {
+void Texture::FreeBuffer() {
     if (_data != nullptr) {
         stbi_image_free(_data);
         _data = nullptr;
     }
+}
+
+void Texture::Flip() {
+    int totalPixels = _width * _height;
+    int halfPixels = totalPixels / 2;
+    int pixelSize = _channels;
+
+    for (int i = 0; i < halfPixels; ++i) {
+        int oppositeIndex = totalPixels - 1 - i;
+
+        for (int c = 0; c < _channels; ++c) {
+            std::swap(
+                    _data[i * pixelSize + c],
+                    _data[oppositeIndex * pixelSize + c]
+            );
+        }
+    }
+}
+void Texture::Mirror() {
+    int rowSize = _width * _channels;
+    for (int y = 0; y < _height; ++y) {
+        unsigned char* row = _data + y * rowSize;
+        for (int x = 0; x < _width / 2; ++x) {
+            int leftIndex = x * _channels;
+            int rightIndex = (_width - 1 - x) * _channels;
+            for (int c = 0; c < _channels; ++c) {
+                std::swap(row[leftIndex + c], row[rightIndex + c]);
+            }
+        }
+    }
+}
+
+Texture::~Texture() {
+    Texture::FreeBuffer();
     glDeleteTextures(1, &_textureID);
 }
 

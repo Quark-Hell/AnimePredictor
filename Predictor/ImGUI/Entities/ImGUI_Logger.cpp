@@ -44,8 +44,8 @@ void ImGUI_Logger::ParseMessages(std::string& buffer) {
 
     static size_t warningMessageCount = 0;
     counter = 0;
-    for(const auto& it : log.GetInfoLogBuffer()) {
-        if (warningMessageCount == log.GetInfoLogBuffer().size()) { break; }
+    for(const auto& it : log.GetWarningLogBuffer()) {
+        if (warningMessageCount == log.GetWarningLogBuffer().size()) { break; }
         if (counter < warningMessageCount) { counter++; continue; }
 
         buffer += it + "\n";
@@ -55,23 +55,12 @@ void ImGUI_Logger::ParseMessages(std::string& buffer) {
 
     static size_t errorMessageCount = 0;
     counter = 0;
-    for(const auto& it : log.GetInfoLogBuffer()) {
-        if (errorMessageCount == log.GetInfoLogBuffer().size()) { break; }
+    for(const auto& it : log.GetErrorLogBuffer()) {
+        if (errorMessageCount == log.GetErrorLogBuffer().size()) { break; }
         if (counter < errorMessageCount) { counter++; continue; }
 
         buffer += it + "\n";
         counter++;
         errorMessageCount = counter;
-    }
-
-    static size_t criticalMessageCount = 0;
-    counter = 0;
-    for(const auto& it : log.GetInfoLogBuffer()) {
-        if (criticalMessageCount == log.GetInfoLogBuffer().size()) { break; }
-        if (counter < criticalMessageCount) { counter++; continue; }
-
-        buffer += it + "\n";
-        counter++;
-        criticalMessageCount = counter;
     }
 }
