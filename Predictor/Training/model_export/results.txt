@@ -1,0 +1,6 @@
+MAE (Mean Absolute Error): 0.9042
+RMSE (Root Mean Square Error): 1.1955
+R² (Coefficient of Determination): 0.4174
+Среднее остатков: -0.0508
+Стандартное отклонение остатков: 1.1944
+

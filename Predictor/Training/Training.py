@@ -169,7 +169,7 @@ def create_feature_only_model(num_features):
 
 
 def train_feature_model(features_df, target):
-    """Обучает модель без использования эмбеддингов идентификаторов"""
+    """Обучает модель"""
     # Используем только остальные признаки
     other_features = features_df.copy()
 
@@ -218,7 +218,7 @@ def train_feature_model(features_df, target):
         )
     ]
 
-    print("\nОбучение модели (без эмбеддингов)...")
+    print("\nОбучение модели...")
     history = model.fit(
         X_train, y_train,
         validation_data=(X_val, y_val),
@@ -266,7 +266,22 @@ def evaluate_model(model, X_test, y_test):
     print(f"Стандартное отклонение предсказаний: {y_pred.std():.2f}")
 
     print("=" * 50)
+
+    save_evaluation_results(mae, rmse, r2, residuals, y_pred, y_test)
     return y_pred
+
+
+def save_evaluation_results(mae, rmse, r2, residuals, y_pred, y_test):
+    """Сохраняет результаты оценки модели в файл"""
+    import os
+    os.makedirs("model_export", exist_ok=True)
+
+    with open("model_export/results.txt", "w", encoding="utf-8") as f:
+        f.write(f"MAE (Mean Absolute Error): {mae:.4f}\n")
+        f.write(f"RMSE (Root Mean Square Error): {rmse:.4f}\n")
+        f.write(f"R² (Coefficient of Determination): {r2:.4f}\n")
+        f.write(f"Среднее остатков: {np.mean(residuals):.4f}\n")
+        f.write(f"Стандартное отклонение остатков: {np.std(residuals):.4f}\n\n")
 
 
 def save_model_and_metadata(model, scaler, mlb, le_type, feature_columns):
@@ -328,7 +343,7 @@ def main():
     print(f"Стандартное отклонение: {target.std():.2f}")
 
     print("\n" + "=" * 60)
-    print("ОБУЧЕНИЕ МОДЕЛИ (без эмбеддингов)")
+    print("ОБУЧЕНИЕ МОДЕЛИ")
     print("=" * 60)
 
     model, splits, targets_splits, scaler, history, feature_columns = train_feature_model(features, target)

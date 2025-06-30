@@ -7,6 +7,7 @@
 #include "ImGUI/Entities/ImGUI_Analysis.h"
 #include "ImGUI/Entities/ImGUI_Training.h"
 #include "ImGUI/Entities/ImGUI_Info.h"
+#include "ImGUI/Entities/ImGUI_Stat.h"
 #include "ImGUI/Entities/ImGUI_EndMain.h"
 #include "ImGUI/Entities/ImGUI_Logger.h"
 
@@ -19,6 +20,7 @@ void LoadGUI(){
     mgr.AddEntity<ImGUI_Training>("Main", "Training");
     mgr.AddEntity<ImGUI_Analysis>("Main", "Analysis");
     mgr.AddEntity<ImGUI_Info>("Main", "Info");
+    mgr.AddEntity<ImGUI_Stat>("Main", "Stat");
     mgr.AddEntity<ImGUI_Logger>("Main", "Logger");
     mgr.AddEntity<ImGUI_EndMain>("Main", "EndMain");
 

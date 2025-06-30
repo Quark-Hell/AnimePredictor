@@ -109,6 +109,7 @@ add_executable(Predictor
         ImGUI/Entities/ImGUI_Training.cpp
         ImGUI/Entities/ImGUI_Analysis.cpp
         ImGUI/Entities/ImGUI_Info.cpp
+        ImGUI/Entities/ImGUI_Stat.cpp
         ImGUI/Entities/ImGUI_Main.cpp
         ImGUI/Entities/ImGUI_EndMain.cpp
         ImGUI/Entities/ImGUI_Logger.cpp
